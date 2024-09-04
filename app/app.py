@@ -152,9 +152,9 @@ with tab2:
     data = yf.download(tickers, start=start_date, end=end_date)['Adj Close']
 
     # Calculate daily returns for each stock
-    rets_fresenius = data['FRE.DE'].pct_change().dropna()
-    rets_deutsche_bank = data['DBK.DE'].pct_change().dropna()
-    rets_commerz_bank = data['CBK.DE'].pct_change().dropna()
+    rets_fresenius = data[tickers[0]].pct_change().dropna()
+    rets_deutsche_bank = data[tickers[1]].pct_change().dropna()
+    rets_commerz_bank = data[tickers[2]].pct_change().dropna()
 
     # Plotting scatter plots
     fig, axs = plt.subplots(1, 3, figsize=(15, 5))
