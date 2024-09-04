@@ -168,7 +168,7 @@ with tab2:
                 np.poly1d(np.polyfit(rets_fresenius, rets_deutsche_bank,
                                      1))(np.unique(rets_fresenius)),
                 color='red')
-    axs[0].set_title(f'{ticker[0]} vs {tikcer[1]}')
+    axs[0].set_title(f'{ticker1} vs {ticker2}')
 
     # Scatter plot for Fresenius vs Commerz Bank
     axs[1].scatter(rets_fresenius, rets_commerz_bank, alpha=0.5)
@@ -195,7 +195,7 @@ with tab2:
     st.write(
         f'Correlation between {ticker1} and {ticker2}: {correlation_fd}')
     st.write(
-        f'Correlation between {tickers1} and {ticker3} {correlation_fc}')
+        f'Correlation between {ticker1} and {ticker3} {correlation_fc}')
 
     # Function to estimate the covariance matrix of excess returns
     def estimate_sigma(in_sample_returns, risk_free_return):
