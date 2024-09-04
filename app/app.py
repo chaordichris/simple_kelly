@@ -272,4 +272,4 @@ with tab2:
         )
     )
 
-    st.pyplot(fig)
+    st.plotly_chart(fig)
