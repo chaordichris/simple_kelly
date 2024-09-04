@@ -139,6 +139,9 @@ with tab2:
   tickers = st.sidebar.multiselect("Select Tickers",
                                    sp500_top50,
                                    default=["AAPL", "MSFT", "GOOGL"])
+  ticker1 = ticker[0]
+  ticker2 = ticker[1]
+  ticker3 = ticker[2]
 
   start_date = st.sidebar.date_input("Start Date",
                                      value=pd.to_datetime('2013-01-01'))
@@ -173,7 +176,7 @@ with tab2:
                 np.poly1d(np.polyfit(rets_fresenius, rets_commerz_bank,
                                      1))(np.unique(rets_fresenius)),
                 color='red')
-    axs[1].set_title(f'{ticker[1]} vs {tikcer[2]}')
+    axs[1].set_title(f'{ticker1} vs {ticker2}')
 
     # Scatter plot for Commerz Bank vs Deutsche Bank
     axs[2].scatter(rets_commerz_bank, rets_deutsche_bank, alpha=0.5)
@@ -181,7 +184,7 @@ with tab2:
                 np.poly1d(np.polyfit(rets_commerz_bank, rets_deutsche_bank,
                                      1))(np.unique(rets_commerz_bank)),
                 color='red')
-    axs[2].set_title(f'{ticker[1]} vs {tikcer[2]}')
+    axs[2].set_title(f'{ticker1} vs {ticker2}')
 
     plt.tight_layout()
     st.pyplot(fig)
@@ -190,9 +193,9 @@ with tab2:
     correlation_fd = np.corrcoef(rets_fresenius, rets_deutsche_bank)[0, 1]
     correlation_fc = np.corrcoef(rets_fresenius, rets_commerz_bank)[0, 1]
     st.write(
-        f'Correlation between {tickers[0]} and {tickers[1]}: {correlation_fd}')
+        f'Correlation between {ticker1} and {ticker2}: {correlation_fd}')
     st.write(
-        f'Correlation between {tickers[0]} and {tickers[2]} {correlation_fc}')
+        f'Correlation between {tickers1} and {ticker3} {correlation_fc}')
 
     # Function to estimate the covariance matrix of excess returns
     def estimate_sigma(in_sample_returns, risk_free_return):
