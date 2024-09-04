@@ -139,9 +139,9 @@ with tab2:
   tickers = st.sidebar.multiselect("Select Tickers",
                                    sp500_top50,
                                    default=["AAPL", "MSFT", "GOOGL"])
-  ticker1 = ticker[0]
-  ticker2 = ticker[1]
-  ticker3 = ticker[2]
+  ticker1 = tickers[0]
+  ticker2 = tickers[1]
+  ticker3 = tickers[2]
 
   start_date = st.sidebar.date_input("Start Date",
                                      value=pd.to_datetime('2013-01-01'))
