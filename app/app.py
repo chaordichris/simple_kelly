@@ -198,6 +198,7 @@ with tab2:
         f'Correlation between {ticker1} and {ticker3} {correlation_fc}')
 
     # Function to estimate the covariance matrix of excess returns
+# Function to estimate the matrix of the second mixed non-centralized moments of the excess returns
     def estimate_sigma(in_sample_returns, risk_free_return):
         n_assets = in_sample_returns.shape[0]
         n_observations = in_sample_returns.shape[1]
@@ -210,7 +211,7 @@ with tab2:
         return cov_matrix
 
     # Parameters for the portfolio optimization
-    risk_free_return = st.sidebar.slider("Risk-Free Return", 0.01, 0.05, 0.02)
+    risk_free_return = 0.02
     exp_rets = np.array([0.09, 0.09])
     s1, s2 = 0.16, 0.16
     rho = 0.5
@@ -225,32 +226,66 @@ with tab2:
     # Optimal portfolio via Nekrasov's formula
     u = (1 + risk_free_return) * pinv(sigma) @ (exp_rets - risk_free_return)
 
-    # Simulation of portfolio allocations
+    # Simulate all possible portfolio allocations
     path_len = 100
-    sim_len = 1000
-    rets = temp[:path_len]
-    b = np.zeros((path_len, sim_len))
-    wealth = np.zeros((path_len, sim_len))
+    sim_num = 100
+    comb_len = 0
 
-    for i in range(sim_len):
-      for j in range(path_len):
-        b[j, i] = np.dot(u, rets[j]) + (1 - np.sum(u))
-        wealth[j, i] = np.prod(b[:j + 1, i])
+    for i in range(101):
+        for j in range(101 - i):
+            comb_len += 1
 
-    # Create 3D scatter plot
+    terminal_wealth = np.zeros((comb_len, 3, sim_num))
+
+    idx = 0
+    for i in range(101):
+        for j in range(101 - i):
+            frac1 = 0.01 * i
+            frac2 = 0.01 * j
+            capital_in_cash = 1.0 - (frac1 + frac2)
+
+            for simulation in range(sim_num):
+                rets = multivariate_normal.rvs(mean=exp_rets, cov=cov_mat, size=path_len).T
+                wealth = 1.0
+
+                for step in range(path_len):
+                    wealth *= ((1.0 + rets[0, step]) * frac1
+                            + (1.0 + rets[1, step]) * frac2
+                            + 1.02 * capital_in_cash)
+
+                terminal_wealth[idx, 0, simulation] = frac1
+                terminal_wealth[idx, 1, simulation] = frac2
+                terminal_wealth[idx, 2, simulation] = wealth
+
+            idx += 1
+
+    # Plotting with Plotly
     fig = make_subplots(rows=1, cols=1, specs=[[{'type': 'scatter3d'}]])
-    for i in range(100):
-      fig.add_trace(
-          go.Scatter3d(x=rets[:path_len, 0],
-                       y=rets[:path_len, 1],
-                       z=wealth[:, i],
-                       mode='markers',
-                       marker=dict(size=3),
-                       name=f'Sim {i + 1}'))
 
-    fig.update_layout(scene=dict(xaxis_title='Stock 1 Returns',
-                                 yaxis_title='Stock 2 Returns',
-                                 zaxis_title='Wealth'),
-                      title="Wealth Simulation in 3D")
+    scatter = go.Scatter3d(
+        x=terminal_wealth[:, 0, 0],
+        y=terminal_wealth[:, 1, 0],
+        z=terminal_wealth[:, 2, 0],
+        mode='markers',
+        marker=dict(
+            size=4,
+            color='red',
+            opacity=0.8
+        )
+    )
 
-    st.plotly_chart(fig)
+    fig.add_trace(scatter)
+
+    # Layout configuration
+    fig.update_layout(
+        scene=dict(
+            xaxis=dict(title='Fraction 1'),
+            yaxis=dict(title='Fraction 2'),
+            zaxis=dict(title='Terminal Wealth'),
+        ),
+        scene_camera=dict(
+            eye=dict(x=1.86, y=0.61, z=0.98)
+        )
+    )
+
+    fig.show()
