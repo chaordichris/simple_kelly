@@ -198,23 +198,28 @@ with tab2:
         f'Correlation between {ticker1} and {ticker3} {correlation_fc}')
 
     # Function to estimate the covariance matrix of excess returns
+   # Function to estimate the matrix of the second mixed non-centralized moments of the excess returns
     def estimate_sigma(in_sample_returns, risk_free_return):
         centered_returns = in_sample_returns - risk_free_return
-        cov_matrix = np.dot(centered_returns, centered_returns.T) / centered_returns.shape[1]
+        cov_matrix = np.dot(centered_returns.T, centered_returns) / centered_returns.shape[0]
         return cov_matrix
 
-    # Parameters for the portfolio optimization
-    risk_free_return = 0.02
-    exp_rets = np.array([0.09, 0.09])
-    s1, s2 = 0.16, 0.16
-    rho = 0.5
-    cov_mat = np.array([[s1, np.sqrt(s1 * s2) * rho],
-                        [np.sqrt(s1 * s2) * rho, s2]])
+    # Streamlit selection for stocks
+    # stock_tickers = st.sidebar.multiselect("Select Stocks", options=["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"], default=["AAPL", "MSFT"])
+    risk_free_return = st.sidebar.slider("Risk-Free Return", 0.01, 0.05, 0.02)
 
-    # Generate a large sample to estimate sigma
-    N = 1000
-    temp = multivariate_normal.rvs(mean=exp_rets, cov=cov_mat, size=N).T
-    sigma = estimate_sigma(temp, risk_free_return)
+    # Fetch historical data for selected stocks
+    if len(tickers) < 2:
+        st.warning("Please select at least two stocks for the simulation.")
+        st.stop()
+
+    # Download stock data
+    data = yf.download(tickers, start="2020-01-01", end="2023-01-01")['Adj Close']
+    returns = data.pct_change().dropna()
+
+    # Calculate expected returns and covariance matrix using second mixed non-centralized moments
+    exp_rets = returns.mean().values
+    sigma = estimate_sigma(returns.values, risk_free_return)
 
     # Optimal portfolio via Nekrasov's formula
     u = (1 + risk_free_return) * pinv(sigma) @ (exp_rets - risk_free_return)
@@ -225,11 +230,11 @@ with tab2:
 
     # Generate all possible portfolio fractions (optimized with vectorization)
     fractions = np.linspace(0, 1, 101)
-    frac_combinations = np.array(np.meshgrid(fractions, fractions)).T.reshape(-1, 2)
+    frac_combinations = np.array(np.meshgrid(fractions, fractions)).T.reshape(-1, len(tickers))
     frac_combinations = frac_combinations[np.sum(frac_combinations, axis=1) <= 1]
 
-    # Precompute the return matrix to avoid redundant computations
-    rets_samples = multivariate_normal.rvs(mean=exp_rets, cov=cov_mat, size=(sim_num, path_len))
+    # Precompute return matrix to avoid redundant computations
+    rets_samples = np.random.multivariate_normal(exp_rets, sigma, size=(sim_num, path_len))
 
     # Efficiently compute terminal wealth
     capital_in_cash = 1.0 - np.sum(frac_combinations, axis=1, keepdims=True)
@@ -237,7 +242,7 @@ with tab2:
 
     for i in range(sim_num):
         rets = rets_samples[i, :, :].T
-        frac_matrix = frac_combinations @ (1 + rets) + capital_in_cash * 1.02
+        frac_matrix = frac_combinations @ (1 + rets) + capital_in_cash * (1 + risk_free_return)
         terminal_wealth[:, i] = np.prod(frac_matrix, axis=1)
 
     # Take the average over simulations
@@ -263,13 +268,15 @@ with tab2:
     # Layout configuration
     fig.update_layout(
         scene=dict(
-            xaxis=dict(title='Fraction 1'),
-            yaxis=dict(title='Fraction 2'),
+            xaxis=dict(title=f'Fraction {tickers[0]}'),
+            yaxis=dict(title=f'Fraction {tickers[1]}'),
             zaxis=dict(title='Terminal Wealth'),
         ),
         scene_camera=dict(
             eye=dict(x=1.86, y=0.61, z=0.98)
-        )
+        ),
+        title="Wealth Simulation in 3D"
     )
 
+    # Display the plot in Streamlit
     st.plotly_chart(fig)
