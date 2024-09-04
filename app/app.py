@@ -176,7 +176,7 @@ with tab2:
                 np.poly1d(np.polyfit(rets_fresenius, rets_commerz_bank,
                                      1))(np.unique(rets_fresenius)),
                 color='red')
-    axs[1].set_title(f'{ticker1} vs {ticker2}')
+    axs[1].set_title(f'{ticker1} vs {ticker3}')
 
     # Scatter plot for Commerz Bank vs Deutsche Bank
     axs[2].scatter(rets_commerz_bank, rets_deutsche_bank, alpha=0.5)
@@ -184,7 +184,7 @@ with tab2:
                 np.poly1d(np.polyfit(rets_commerz_bank, rets_deutsche_bank,
                                      1))(np.unique(rets_commerz_bank)),
                 color='red')
-    axs[2].set_title(f'{ticker1} vs {ticker2}')
+    axs[2].set_title(f'{ticker2} vs {ticker3}')
 
     plt.tight_layout()
     st.pyplot(fig)
