@@ -196,8 +196,15 @@ with tab2:
 
     # Function to estimate the covariance matrix of excess returns
     def estimate_sigma(in_sample_returns, risk_free_return):
-      cov_matrix = np.cov(in_sample_returns - risk_free_return)
-      return cov_matrix
+        n_assets = in_sample_returns.shape[0]
+        n_observations = in_sample_returns.shape[1]
+        cov_matrix = np.zeros((n_assets, n_assets))
+
+        for k in range(n_assets):
+            for j in range(n_assets):
+                cov_matrix[k, j] = np.mean((in_sample_returns[k, :] - risk_free_return) * (in_sample_returns[j, :] - risk_free_return))
+
+        return cov_matrix
 
     # Parameters for the portfolio optimization
     risk_free_return = st.sidebar.slider("Risk-Free Return", 0.01, 0.05, 0.02)
