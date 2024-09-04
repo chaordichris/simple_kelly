@@ -198,16 +198,9 @@ with tab2:
         f'Correlation between {ticker1} and {ticker3} {correlation_fc}')
 
     # Function to estimate the covariance matrix of excess returns
-# Function to estimate the matrix of the second mixed non-centralized moments of the excess returns
     def estimate_sigma(in_sample_returns, risk_free_return):
-        n_assets = in_sample_returns.shape[0]
-        n_observations = in_sample_returns.shape[1]
-        cov_matrix = np.zeros((n_assets, n_assets))
-
-        for k in range(n_assets):
-            for j in range(n_assets):
-                cov_matrix[k, j] = np.mean((in_sample_returns[k, :] - risk_free_return) * (in_sample_returns[j, :] - risk_free_return))
-
+        centered_returns = in_sample_returns - risk_free_return
+        cov_matrix = np.dot(centered_returns, centered_returns.T) / centered_returns.shape[1]
         return cov_matrix
 
     # Parameters for the portfolio optimization
@@ -220,52 +213,39 @@ with tab2:
 
     # Generate a large sample to estimate sigma
     N = 1000
-    temp = multivariate_normal.rvs(mean=exp_rets, cov=cov_mat, size=N)
-    sigma = estimate_sigma(temp.T, risk_free_return)
+    temp = multivariate_normal.rvs(mean=exp_rets, cov=cov_mat, size=N).T
+    sigma = estimate_sigma(temp, risk_free_return)
 
     # Optimal portfolio via Nekrasov's formula
     u = (1 + risk_free_return) * pinv(sigma) @ (exp_rets - risk_free_return)
 
-    # Simulate all possible portfolio allocations
-    path_len = 100
-    sim_num = 100
-    comb_len = 0
+    # Generate all possible portfolio fractions (optimized with vectorization)
+    fractions = np.linspace(0, 1, 101)
+    frac_combinations = np.array(np.meshgrid(fractions, fractions)).T.reshape(-1, 2)
+    frac_combinations = frac_combinations[np.sum(frac_combinations, axis=1) <= 1]
 
-    for i in range(101):
-        for j in range(101 - i):
-            comb_len += 1
+    # Precompute the return matrix to avoid redundant computations
+    rets_samples = multivariate_normal.rvs(mean=exp_rets, cov=cov_mat, size=(sim_num, path_len))
 
-    terminal_wealth = np.zeros((comb_len, 3, sim_num))
+    # Efficiently compute terminal wealth
+    capital_in_cash = 1.0 - np.sum(frac_combinations, axis=1, keepdims=True)
+    terminal_wealth = np.ones((frac_combinations.shape[0], sim_num))
 
-    idx = 0
-    for i in range(101):
-        for j in range(101 - i):
-            frac1 = 0.01 * i
-            frac2 = 0.01 * j
-            capital_in_cash = 1.0 - (frac1 + frac2)
+    for i in range(sim_num):
+        rets = rets_samples[i, :, :].T
+        frac_matrix = frac_combinations @ (1 + rets) + capital_in_cash * 1.02
+        terminal_wealth[:, i] = np.prod(frac_matrix, axis=1)
 
-            for simulation in range(sim_num):
-                rets = multivariate_normal.rvs(mean=exp_rets, cov=cov_mat, size=path_len).T
-                wealth = 1.0
-
-                for step in range(path_len):
-                    wealth *= ((1.0 + rets[0, step]) * frac1
-                            + (1.0 + rets[1, step]) * frac2
-                            + 1.02 * capital_in_cash)
-
-                terminal_wealth[idx, 0, simulation] = frac1
-                terminal_wealth[idx, 1, simulation] = frac2
-                terminal_wealth[idx, 2, simulation] = wealth
-
-            idx += 1
+    # Take the average over simulations
+    mean_terminal_wealth = np.mean(terminal_wealth, axis=1)
 
     # Plotting with Plotly
     fig = make_subplots(rows=1, cols=1, specs=[[{'type': 'scatter3d'}]])
 
     scatter = go.Scatter3d(
-        x=terminal_wealth[:, 0, 0],
-        y=terminal_wealth[:, 1, 0],
-        z=terminal_wealth[:, 2, 0],
+        x=frac_combinations[:, 0],
+        y=frac_combinations[:, 1],
+        z=mean_terminal_wealth,
         mode='markers',
         marker=dict(
             size=4,
