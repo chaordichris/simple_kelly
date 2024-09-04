@@ -219,6 +219,10 @@ with tab2:
     # Optimal portfolio via Nekrasov's formula
     u = (1 + risk_free_return) * pinv(sigma) @ (exp_rets - risk_free_return)
 
+    # Simulation parameters
+    path_len = 100
+    sim_num = 100  # Define the number of simulations
+
     # Generate all possible portfolio fractions (optimized with vectorization)
     fractions = np.linspace(0, 1, 101)
     frac_combinations = np.array(np.meshgrid(fractions, fractions)).T.reshape(-1, 2)
