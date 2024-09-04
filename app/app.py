@@ -272,4 +272,4 @@ with tab2:
         )
     )
 
-    fig.show()
+    st.pyplot(fig)
