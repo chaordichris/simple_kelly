@@ -26,10 +26,28 @@ with tab1:
   # Let the user adjust the parameters
   param1 = st.slider("Parameter 1 (Growth multiplier)", min_value=0.1, max_value=3.0, value=1.5, step=0.1)
   param2 = st.slider("Parameter 2 (Loss multiplier)", min_value=0.05, max_value=1.0, value=0.5, step=0.05)
+  param3 = st.slider("Parameter 3 (Probability of Success)", min_value=0.05, max_value=1.0, value=0.5, step=0.05)
+  
+  # Brief explanation of the Kelly formula
+  st.markdown("""
+  ### Kelly Criterion Formula
 
+  The Kelly Criterion is a formula used to determine the optimal size of a series of bets in order to maximize long-term growth. The formula is:
+
+  \[
+  f^* = \frac{p}{|q|}
+  \]
+
+  Where:
+  - \( f^* \) is the fraction of capital to be invested
+  - \( p \) is the probability of success
+  - \( q \) is the loss/profit ratio (for example, when gaining 1.7x and losing 0.7x)
+
+  This graph visualizes the expected growth rate based on the fraction of capital invested and the given return and loss multipliers.
+  """)
   # Generate the data based on user input
   u = np.linspace(0, 1, num=100)
-  xgr = 0.5 * (np.log(1 + param1 * u) + np.log(1 - param2 * u))
+  xgr = param3 * np.log(1 + param1 * u) + (1-param3) * np.log(1 - param2 * u) 
   # Create a DataFrame
   df = pd.DataFrame({'perc_capital': u, 'expected_growth': xgr})
   # Plot using Seaborn
