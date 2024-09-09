@@ -116,7 +116,7 @@ with tab1:
 with tab2:
   # Sidebar for user input in Tab 1
 
-  selected_stock = tickers = st.multiselect("Select Tickers",
+  selected_stock = st.multiselect("Select Tickers",
                                   tickers)
   n_simulations = st.slider("Number of Simulations",
                                     min_value=100,
