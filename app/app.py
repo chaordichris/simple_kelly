@@ -244,7 +244,7 @@ with tab3:
   end_date = st.date_input("End Date",
                                    value=pd.to_datetime('2023-04-30'))
 
-  run_analysis = st.sidebar.button("Run Analysis")
+  run_analysis = st.button("Run Analysis")
 
   if run_analysis:
     # Download historical stock data using yfinance
