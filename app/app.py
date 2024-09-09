@@ -44,7 +44,7 @@ end_date = st.sidebar.date_input("End Date",
 # Create tabs
 tab1, tab2, tab3 = st.tabs([
     "Kelly Optimal Betting Fraction",
-    "Optimal Kelly Fraction Simulation (1 stock & risk free instrument)",
+    "Optimal Kelly Fraction Simulation",
     "Optimal Portfolio of Correlated Stocks"
 ])
 
