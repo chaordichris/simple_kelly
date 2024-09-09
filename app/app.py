@@ -10,15 +10,38 @@ import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 
 # Set the title for the Streamlit app
-st.title("Financial Simulations")
+st.title("Simple Kelly Criterion")
 
 # Create tabs
-tab1, tab2 = st.tabs([
+tab1, tab2, tab3 = st.tabs([
+    "Kelly Optimal Betting Fraction",
     "Optimal Kelly Fraction Simulation (1 stock & risk free instrument)",
     "Optimal Portfolio of Correlated Stocks"
 ])
 
 with tab1:
+# Title for the app
+  st.sidebar.header("Expected Growth Rate vs Capital Fraction in Stock")
+
+  # Let the user adjust the parameters
+  param1 = st.slider("Parameter 1 (Growth multiplier)", min_value=0.1, max_value=3.0, value=1.7, step=0.1)
+  param2 = st.slider("Parameter 2 (Loss multiplier)", min_value=0.1, max_value=3.0, value=0.7, step=0.1)
+
+  # Generate the data based on user input
+  u = np.linspace(0, 1, num=100)
+  xgr = 0.5 * (np.log(1 + param1 * u) + np.log(1 - param2 * u))
+  # Create a DataFrame
+  df = pd.DataFrame({'perc_capital': u, 'expected_growth': xgr})
+  # Plot using Seaborn
+  st.subheader("Expected Growth Rate vs Capital Fraction")
+  fig, ax = plt.subplots()
+  sns.lineplot(data=df, x='perc_capital', y='expected_growth', ax=ax)
+  plt.xlabel("Percentage of Capital")
+  plt.ylabel("Expected Growth Rate")
+  st.pyplot(fig)
+
+
+with tab2:
   # Sidebar for user input in Tab 1
   st.sidebar.header("Kelly Fraction Simulation Parameters")
 
@@ -29,9 +52,12 @@ with tab1:
       'MRK', 'TMO', 'CVX', 'ABT', 'CMCSA', 'DHR', 'AVGO', 'COST', 'ACN', 'NEE',
       'WFC', 'LIN', 'TXN', 'ADBE', 'MDT', 'HON', 'UNP', 'ORCL', 'PM'
   ]
+  # Ticker selection from sp500_top50
+  tickers = st.sidebar.multiselect("Select Tickers",
+                                   sp500_top50,
+                                   default=["AAPL", "MSFT", "GOOGL"])
 
-  selected_stock = st.sidebar.selectbox("Select a Stock for DAX Variable:",
-                                        sp500_top50)
+  selected_stock = tickers[0]
   n_simulations = st.sidebar.slider("Number of Simulations",
                                     min_value=100,
                                     max_value=5000,
@@ -131,14 +157,11 @@ with tab1:
       ax2.set_ylabel("Log Wealth")
       st.pyplot(fig2)
 
-with tab2:
+with tab3:
   # Sidebar for user input in Tab 2
   st.sidebar.header("Optimal Portfolio Parameters")
 
-  # Ticker selection from sp500_top50
-  tickers = st.sidebar.multiselect("Select Tickers",
-                                   sp500_top50,
-                                   default=["AAPL", "MSFT", "GOOGL"])
+
   ticker1 = tickers[0]
   ticker2 = tickers[1]
   ticker3 = tickers[2]
@@ -196,87 +219,5 @@ with tab2:
         f'Correlation between {ticker1} and {ticker2}: {correlation_fd}')
     st.write(
         f'Correlation between {ticker1} and {ticker3} {correlation_fc}')
-
-    # Function to estimate the covariance matrix of excess returns
-   # Function to estimate the matrix of the second mixed non-centralized moments of the excess returns
-    def estimate_sigma(in_sample_returns, risk_free_return):
-        centered_returns = in_sample_returns - risk_free_return
-        cov_matrix = np.dot(centered_returns.T, centered_returns) / centered_returns.shape[0]
-        return cov_matrix
-
-    # Streamlit selection for stocks
-    # stock_tickers = st.sidebar.multiselect("Select Stocks", options=["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"], default=["AAPL", "MSFT"])
-    risk_free_return = st.sidebar.slider("Risk-Free Return", 0.01, 0.05, 0.02)
-
-    # Fetch historical data for selected stocks
-    if len(tickers) < 2:
-        st.warning("Please select at least two stocks for the simulation.")
-        st.stop()
-
-    # Download stock data
-    data = yf.download(tickers, start="2020-01-01", end="2023-01-01")['Adj Close']
-    returns = data.pct_change().dropna()
-
-    # Calculate expected returns and covariance matrix using second mixed non-centralized moments
-    exp_rets = returns.mean().values
-    sigma = estimate_sigma(returns.values, risk_free_return)
-
-    # Optimal portfolio via Nekrasov's formula
-    u = (1 + risk_free_return) * pinv(sigma) @ (exp_rets - risk_free_return)
-
-    # Simulation parameters
-    path_len = 100
-    sim_num = 100  # Define the number of simulations
-
-    # Generate all possible portfolio fractions (optimized with vectorization)
-    fractions = np.linspace(0, 1, 101)
-    frac_combinations = np.array(np.meshgrid(fractions, fractions)).T.reshape(-1, len(tickers))
-    frac_combinations = frac_combinations[np.sum(frac_combinations, axis=1) <= 1]
-
-    # Precompute return matrix to avoid redundant computations
-    rets_samples = np.random.multivariate_normal(exp_rets, sigma, size=(sim_num, path_len))
-
-    # Efficiently compute terminal wealth
-    capital_in_cash = 1.0 - np.sum(frac_combinations, axis=1, keepdims=True)
-    terminal_wealth = np.ones((frac_combinations.shape[0], sim_num))
-
-    for i in range(sim_num):
-        rets = rets_samples[i, :, :].T
-        frac_matrix = frac_combinations @ (1 + rets) + capital_in_cash * (1 + risk_free_return)
-        terminal_wealth[:, i] = np.prod(frac_matrix, axis=1)
-
-    # Take the average over simulations
-    mean_terminal_wealth = np.mean(terminal_wealth, axis=1)
-
-    # Plotting with Plotly
-    fig = make_subplots(rows=1, cols=1, specs=[[{'type': 'scatter3d'}]])
-
-    scatter = go.Scatter3d(
-        x=frac_combinations[:, 0],
-        y=frac_combinations[:, 1],
-        z=mean_terminal_wealth,
-        mode='markers',
-        marker=dict(
-            size=4,
-            color='red',
-            opacity=0.8
-        )
-    )
-
-    fig.add_trace(scatter)
-
-    # Layout configuration
-    fig.update_layout(
-        scene=dict(
-            xaxis=dict(title=f'Fraction {tickers[0]}'),
-            yaxis=dict(title=f'Fraction {tickers[1]}'),
-            zaxis=dict(title='Terminal Wealth'),
-        ),
-        scene_camera=dict(
-            eye=dict(x=1.86, y=0.61, z=0.98)
-        ),
-        title="Wealth Simulation in 3D"
-    )
-
-    # Display the plot in Streamlit
-    st.plotly_chart(fig)
+    st.write(
+        f'Correlation between {ticker2} and {ticker3} {correlation_fc}')
