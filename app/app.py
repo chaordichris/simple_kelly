@@ -40,20 +40,19 @@ with tab1:
   # Brief explanation of the Kelly formula
   kelly_formula = r'''
   ## Kelly Criterion Formula
-  Expected Geometric Growth Rate
-  ### Full equation
+  ### Expected Geometric Growth Rate
   $$ 
   r = (1+fb)^{p} * (1-fa)^{1-p}
   $$
   
-  Where f is the fraction of the portfolio to be invested, p is the probability of success, b is the growth multiplier, and a is the loss multiplier.
+  Where $f$ is the fraction of the portfolio to be invested, $p$ is the probability of success, $b$ is the growth multiplier, and $a$ is the loss multiplier.
 
   Now take ARGMAX of the log expected growth rate.
   $$
   ARGMAX  p * log(1 + fb) + (1-p) * log(1 - fa)
   $$
 
-  We can then solve for f to get the optimal fraction of the portfolio to be invested by taking the derivative of the above equation with respect to f and setting it to zero.
+  We can then solve for $f$ to get the optimal fraction of the portfolio to be invested by taking the derivative of the above equation with respect to $f$ and setting it to zero.
   $$
   \frac{d}{df} p * log(1 + fb) + (1-p) * log(1 - fa) = 0
   $$
@@ -67,8 +66,6 @@ with tab1:
   param1 = st.slider("Parameter 1 (Growth multiplier)", min_value=0.1, max_value=3.0, value=1.5, step=0.1)
   param2 = st.slider("Parameter 2 (Loss multiplier)", min_value=0.05, max_value=1.0, value=0.5, step=0.05)
   param3 = st.slider("Parameter 3 (Probability of Success)", min_value=0.05, max_value=1.0, value=0.5, step=0.05)
-  param4 = st.slider("Parameter 4 (Number of Periods)", min_value=10, max_value=1000, value=50, step=10)
-  param5 = st.slider("Parameter 5 (Percent Kelly to Compare)", min_value=0.05, max_value=1.0, value=0.5, step=0.05)
   
   # Generate the data based on user input
   u = np.linspace(0, 1, num=100)
@@ -86,6 +83,8 @@ with tab1:
   # lets do an additional exercise by solving for the kelly optimal percent of capital to invest based on the scenario we present
   # and write a function in python to calculate and plot the full kelly, half kelly, and fully invested strategies, 
   # similar to the above, but done in a nice python function where inputs are provided
+  param4 = st.slider("Parameter 4 (Number of Periods)", min_value=10, max_value=1000, value=50, step=10)
+  param5 = st.slider("Parameter 5 (Percent Kelly to Compare)", min_value=0.05, max_value=1.0, value=0.5, step=0.05)
   def log_util(u, p1, r1, r2):
     # inverse log utility so we can use the scipy minimize function
     return -1.0 *(p1*np.log(1+r1*u) + (1-p1)*np.log(1-r2*u))
