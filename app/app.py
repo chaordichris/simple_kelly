@@ -14,7 +14,7 @@ from scipy.stats import binom
 # Set the title for the Streamlit app
 st.title("Simple Kelly Criterion")
 
-st.sidebar.header("Select 3  Stocks for your portfolio")
+st.sidebar.header("Select Up to 3 Stocks for your portfolio")
 
 sp500_top50 = [
     'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'GOOG', 'BRK-B', 'NVDA', 'TSLA', 'META',
@@ -27,7 +27,15 @@ sp500_top50 = [
 tickers = st.sidebar.multiselect("Select Tickers",
                                   sp500_top50,
                                   default=["AAPL", "MSFT", "GOOGL"])
+# Error handling to ensure at least 3 tickers are selected
+if len(tickers) < 3:
+    st.sidebar.error("Please select at least 3 tickers.")
+    # Set default tickers if not enough are selected
+    tickers = ["AAPL", "MSFT", "GOOGL"]
 
+ticker1 = tickers[0]
+ticker2 = tickers[1]
+ticker3 = tickers[2]
 # Create tabs
 tab1, tab2, tab3 = st.tabs([
     "Kelly Optimal Betting Fraction",
@@ -54,7 +62,7 @@ with tab1:
 
   We can then solve for $f$ to get the optimal fraction of the portfolio to be invested by taking the derivative of the above equation with respect to $f$ and setting it to zero.
   $$
-  \frac{d}{df} p * log(1 + fb) + (1-p) * log(1 - fa) = 0
+  \frac{d}{df} [p * log(1 + fb) + (1-p) * log(1 - fa)] = 0
   $$
   Finally after rearranging we get, giving us the kelly fraction:
   $$
@@ -230,11 +238,6 @@ with tab2:
 with tab3:
   # Sidebar for user input in Tab 2
   st.header("Optimal Portfolio Parameters")
-
-
-  ticker1 = tickers[0]
-  ticker2 = tickers[1]
-  ticker3 = tickers[2]
 
   start_date = st.date_input("Start Date",
                                      value=pd.to_datetime('2013-01-01'))
