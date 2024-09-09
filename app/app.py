@@ -40,15 +40,26 @@ with tab1:
   # Brief explanation of the Kelly formula
   kelly_formula = r'''
   ## Kelly Criterion Formula
-  Expected Wealth Formula
+  Expected Geometric Growth Rate
   ### Full equation
   $$ 
-  E(W) = P(win) * Growth Multiplier + P(loss) * Loss Multiplier
+  r = (1+fb)^{p} * (1-fa)^{1-p}
   $$
   
-  Take the MAX of the log expected wealth (log utility function), where u is the utility. 
+  Where f is the fraction of the portfolio to be invested, p is the probability of success, b is the growth multiplier, and a is the loss multiplier.
+
+  Now take ARGMAX of the log expected growth rate.
   $$
-  MAX P(win) * log(1 + Growth Multiplier * u) + P(loss) * log(1 - Loss Multiplier * u)
+  ARGMAX  p * log(1 + fb) + (1-p) * log(1 - fa)
+  $$
+
+  We can then solve for f to get the optimal fraction of the portfolio to be invested by taking the derivative of the above equation with respect to f and setting it to zero.
+  $$
+  \frac{d}{df} p * log(1 + fb) + (1-p) * log(1 - fa) = 0
+  $$
+  Finally after rearranging we get, giving us the kelly fraction:
+  $$
+  f^{*} = \frac{p}{a} - \frac{1-p}{b}
   $$
   '''
   st.write(kelly_formula)
