@@ -98,9 +98,9 @@ with tab1:
         wealth[i] = wealth[i-1] * (1+r1)
         wealth_k[i] = wealth_k[i-1] * k * (1+r1) + wealth_k[i-1] * (1-k)
         wealth_fk[i] = wealth_fk[i-1] * f*k * (1+r1) + wealth_fk[i-1] * (1-f*k)
-    df = pd.DataFrame(data = {'full_wealth':wealth,
-                            'kelly_wealth':wealth_k,
-                            f'{param5}_kelly_wealth':wealth_fk,
+    df = pd.DataFrame(data = {'Invest Everything':wealth,
+                            'Invest Kelly Optimal Amount':wealth_k,
+                            f'Invest {param5}% of Kelly Optimal Amount':wealth_fk,
                             'periods':periods})
     return df
 
