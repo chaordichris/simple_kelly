@@ -24,8 +24,8 @@ with tab1:
   st.sidebar.header("Expected Growth Rate vs Capital Fraction in Stock")
 
   # Let the user adjust the parameters
-  param1 = st.slider("Parameter 1 (Growth multiplier)", min_value=0.1, max_value=3.0, value=1.7, step=0.1)
-  param2 = st.slider("Parameter 2 (Loss multiplier)", min_value=0.1, max_value=3.0, value=0.7, step=0.1)
+  param1 = st.slider("Parameter 1 (Growth multiplier)", min_value=0.1, max_value=3.0, value=1.5, step=0.1)
+  param2 = st.slider("Parameter 2 (Loss multiplier)", min_value=0.05, max_value=1.0, value=0.5, step=0.05)
 
   # Generate the data based on user input
   u = np.linspace(0, 1, num=100)
