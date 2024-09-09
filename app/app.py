@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 from scipy.optimize import minimize
+from scipy.stats import binom
 
 # Set the title for the Streamlit app
 st.title("Simple Kelly Criterion")
@@ -45,7 +46,7 @@ with tab1:
   E(W) = P(win) * Growth Multiplier + P(loss) * Loss Multiplier
   $$
   
-  Take the MAX of the log expected wealth (log utility function), where u represents the total amount of capital bet. 
+  Take the MAX of the log expected wealth (log utility function), where u is the utility. 
   $$
   MAX P(win) * log(1 + Growth Multiplier * u) + P(loss) * log(1 - Loss Multiplier * u)
   $$
