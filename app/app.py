@@ -13,7 +13,7 @@ from scipy.optimize import minimize
 # Set the title for the Streamlit app
 st.title("Simple Kelly Criterion")
 
-  st.sidebar.header("Select 3  Stocks for your portfolio")
+st.sidebar.header("Select 3  Stocks for your portfolio")
 
 sp500_top50 = [
     'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'GOOG', 'BRK-B', 'NVDA', 'TSLA', 'META',
