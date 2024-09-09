@@ -24,12 +24,16 @@ with tab1:
   # Brief explanation of the Kelly formula
   kelly_formula = r'''
   ## Kelly Criterion Formula
+  Expected Wealth Formula
   ### Full equation
   $$ 
-  f^* = \frac{p}{|q|}
+  E(W) = P(win) * Growth Multiplier + P(loss) * Loss Multiplier
   $$
-  ### Inline explanation
-  Where $f^*$ is the fraction of capital to be invested, $p$ is the probability of success, and $q$ is the loss/profit ratio.
+  
+  Take the MAX of the log expected wealth (log utility function), where u represents the total amount of capital bet. 
+  $$
+  MAX P(win) * log(1 + Growth Multiplier * u) + P(loss) * log(1 - Loss Multiplier * u)
+  $$
   '''
   st.write(kelly_formula)
   # Let the user adjust the parameters
