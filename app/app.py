@@ -104,7 +104,7 @@ with tab1:
                             'periods':periods})
     return df
 
-  df = wealth(param3, param1, param2, 75, 1, .75) # make this selectable in the streamlit application
+  df = wealth(param3, param1, param2, param4, 1, param5) # make this selectable in the streamlit application
   dfm = df.melt('periods', var_name = 'wealth_fraction', value_name = 'wealth')
   st.subheader("Expected Wealth w/ Different Kelly Fractions")
   fig2, ax2 = plt.subplots()
