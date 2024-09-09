@@ -139,8 +139,8 @@ with tab1:
 with tab2:
   tab2_text = '''
   ## Kelly Fraction Simulation
-  We simulate the kelly fraction for a given stock and risk free rate. We then plot the results for the simulation and the average results.
-  Select a stock and a risk free rate to simulate.
+  Simulate the kelly fraction for a given stock and risk free rate.
+  Select a stock, a risk free rate to simulate, and simulation parameters to view simluation results.
   '''
   st.write(tab2_text)
   # Sidebar for user input in Tab 1
