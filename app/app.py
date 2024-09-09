@@ -36,6 +36,11 @@ if len(tickers) < 3:
 ticker1 = tickers[0]
 ticker2 = tickers[1]
 ticker3 = tickers[2]
+
+start_date = st.sidebar.date_input("Start Date",
+                                    value=pd.to_datetime('2013-01-01'))
+end_date = st.sidebar.date_input("End Date",
+                                  value=pd.to_datetime('2023-04-30'))
 # Create tabs
 tab1, tab2, tab3 = st.tabs([
     "Kelly Optimal Betting Fraction",
@@ -47,7 +52,7 @@ with tab1:
 # Title for the app
   # Brief explanation of the Kelly formula
   kelly_formula = r'''
-  ## Kelly Criterion Formula
+  ## Kelly Criterion Derivation
   ### Expected Geometric Growth Rate
   $$ 
   r = (1+fb)^{p} * (1-fa)^{1-p}
@@ -132,10 +137,20 @@ with tab1:
   st.pyplot(fig2)
 
 with tab2:
+  tab2_text = '''
+  ## Kelly Fraction Simulation
+  We simulate the kelly fraction for a given stock and risk free rate. We then plot the results for the simulation and the average results.
+  Select a stock and a risk free rate to simulate.
+  '''
+  st.write(tab2_text)
   # Sidebar for user input in Tab 1
-
   selected_stock = st.multiselect("Select Tickers",
                                   tickers)
+  risk_free_rate = st.slider("Risk Free Rate",
+                                    min_value=0.0,
+                                    max_value=0.15,
+                                    value=0.03,
+                                    step=0.01)
   n_simulations = st.slider("Number of Simulations",
                                     min_value=100,
                                     max_value=5000,
@@ -153,12 +168,12 @@ with tab2:
 
   if run_simulation:
     # Download the selected stock data
-    dax = yf.download(selected_stock, start='1900-1-1', interval='1mo')
+    dax = yf.download(selected_stock, start=start_date, end=end_date, interval='1mo')
     dax['monthly_returns'] = (dax['Close'] / dax['Close'].shift(1)
                               ) - 1  # Calculate the monthly returns
     mu = dax['monthly_returns'].mean()
     sigma = dax['monthly_returns'].std()
-    r = 0.03 / 12.0  # Monthly risk-free rate
+    r = risk_free_rate / 12.0  # Monthly risk-free rate
 
     # Initialize a list to store the grouped DataFrames for each Kelly fraction
     dff_list = []
@@ -238,12 +253,6 @@ with tab2:
 with tab3:
   # Sidebar for user input in Tab 2
   st.header("Optimal Portfolio Parameters")
-
-  start_date = st.date_input("Start Date",
-                                     value=pd.to_datetime('2013-01-01'))
-  end_date = st.date_input("End Date",
-                                   value=pd.to_datetime('2023-04-30'))
-
   run_analysis = st.button("Run Analysis")
 
   if run_analysis:
