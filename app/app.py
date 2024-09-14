@@ -76,9 +76,9 @@ with tab1:
   '''
   st.write(kelly_formula)
   # Let the user adjust the parameters
-  param1 = st.slider("Parameter 1 (Growth multiplier)", min_value=0.1, max_value=3.0, value=1.5, step=0.1)
+  param1 = st.slider("Parameter 1 (Growth multiplier)", min_value=0.1, max_value=3.0, value=1.5, step=0.05)
   param2 = st.slider("Parameter 2 (Loss multiplier)", min_value=0.05, max_value=1.0, value=0.5, step=0.05)
-  param3 = st.slider("Parameter 3 (Probability of Success)", min_value=0.05, max_value=1.0, value=0.5, step=0.05)
+  param3 = st.slider("Parameter 3 (Probability of Success)", min_value=0.01, max_value=1.0, value=0.5, step=0.01)
   
   # Generate the data based on user input
   u = np.linspace(0, 1, num=100)
@@ -139,8 +139,8 @@ with tab1:
 with tab2:
   tab2_text = '''
   ## Kelly Fraction Simulation
-  Simulate the kelly fraction for a given stock and risk free rate.
-  Select a stock, a risk free rate to simulate, and simulation parameters to view simluation results.
+  Simulate the log wealth of different kelly fractions for a given stock and risk free rate.
+  Select a stock, a risk free rate, periods (months), simulations, and kelly steps to view simulation results.
   '''
   st.write(tab2_text)
   # Sidebar for user input in Tab 1
