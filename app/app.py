@@ -169,7 +169,7 @@ with tab2:
       st.pyplot(fig11)
     with col12:
       fig12, ax12 = plt.subplots()
-      sns.displot(dax['monthly_returns'], ax=ax12)
+      sns.displot(dax['monthly_returns'], ax=ax12, kde=False, stat='density', bins=30)
       sns.kdeplot(normal_returns, ax=ax12)
       ax12.set_title("Distribution of Monthly Returns")
       ax12.set_xlabel("Monthly Returns")
