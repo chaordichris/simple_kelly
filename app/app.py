@@ -29,7 +29,7 @@ tickers = st.sidebar.multiselect("Select Tickers",
                                   default=["AAPL", "MSFT", "GOOGL"])
 # Error handling to ensure at least 3 tickers are selected
 if len(tickers) < 3:
-    st.sidebar.error("Please select at least 3 tickers.")
+    st.sidebar.error("Please select 3 tickers.")
     # Set default tickers if not enough are selected
     tickers = ["AAPL", "MSFT", "GOOGL"]
 
@@ -45,7 +45,8 @@ end_date = st.sidebar.date_input("End Date",
 tab1, tab2, tab3 = st.tabs([
     "Kelly Optimal Betting Fraction",
     "Optimal Kelly Fraction Simulation",
-    "Optimal Portfolio of Correlated Stocks"
+    "Visualizing Correlated Stocks",
+    "Correlation Analysis"
 ])
 
 with tab1:
