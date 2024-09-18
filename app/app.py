@@ -42,7 +42,7 @@ start_date = st.sidebar.date_input("Start Date",
 end_date = st.sidebar.date_input("End Date",
                                   value=pd.to_datetime('2023-04-30'))
 # Create tabs
-tab1, tab2, tab3 = st.tabs([
+tab1, tab2, tab3, tab4 = st.tabs([
     "Kelly Optimal Betting Fraction",
     "Optimal Kelly Fraction Simulation",
     "Visualizing Correlated Stocks",
