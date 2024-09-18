@@ -46,7 +46,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
     "Kelly Optimal Betting Fraction",
     "Optimal Kelly Fraction Simulation",
     "Visualizing Correlated Stocks",
-    "Correlation Analysis"
+    "Portfolio Optimization"
 ])
 
 with tab1:
@@ -278,54 +278,52 @@ with tab2:
 
 with tab3:
   # Sidebar for user input in Tab 2
-  st.header("Optimal Portfolio Parameters")
+  st.header("Correlation Analaysis")
+  
+  # Download historical stock data using yfinance
+  data = yf.download(tickers, start=start_date, end=end_date)['Adj Close']
+
+  # Calculate daily returns for each stock
+  rets_fresenius = data[tickers[0]].pct_change().dropna()
+  rets_deutsche_bank = data[tickers[1]].pct_change().dropna()
+  rets_commerz_bank = data[tickers[2]].pct_change().dropna()
+  # calculate the correlations
+  correlation_fd = np.corrcoef(rets_fresenius, rets_deutsche_bank)[0, 1]
+  correlation_fc = np.corrcoef(rets_fresenius, rets_commerz_bank)[0, 1]
+  correlation_dc = np.corrcoef(rets_deutsche_bank, rets_commerz_bank)[0, 1]
+  # Plotting scatter plots
+  fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+
+  # Scatter plot for Fresenius vs Deutsche Bank
+  axs[0].scatter(rets_fresenius, rets_deutsche_bank, alpha=0.5)
+  axs[0].plot(np.unique(rets_fresenius),
+              np.poly1d(np.polyfit(rets_fresenius, rets_deutsche_bank,
+                                    1))(np.unique(rets_fresenius)),
+              color='red')
+  axs[0].set_title(f'{ticker1} vs {ticker2} (Correlation: {correlation_fd:.2f})')
+
+  # Scatter plot for Fresenius vs Commerz Bank
+  axs[1].scatter(rets_fresenius, rets_commerz_bank, alpha=0.5)
+  axs[1].plot(np.unique(rets_fresenius),
+              np.poly1d(np.polyfit(rets_fresenius, rets_commerz_bank,
+                                    1))(np.unique(rets_fresenius)),
+              color='red')
+  axs[1].set_title(f'{ticker1} vs {ticker3} (Correlation: {correlation_fc:.2f})')
+
+  # Scatter plot for Commerz Bank vs Deutsche Bank
+  axs[2].scatter(rets_commerz_bank, rets_deutsche_bank, alpha=0.5)
+  axs[2].plot(np.unique(rets_commerz_bank),
+              np.poly1d(np.polyfit(rets_commerz_bank, rets_deutsche_bank,
+                                    1))(np.unique(rets_commerz_bank)),
+              color='red')
+  axs[2].set_title(f'{ticker2} vs {ticker3} (Correlation: {correlation_dc:.2f})')
+
+  plt.tight_layout()
+  st.pyplot(fig)
+
+  # Calculate and display correlations
+
+with tab4:
   run_analysis = st.button("Run Analysis")
-
+  # run the portfolio optimization after the button is clicked
   if run_analysis:
-    # Download historical stock data using yfinance
-    data = yf.download(tickers, start=start_date, end=end_date)['Adj Close']
-
-    # Calculate daily returns for each stock
-    rets_fresenius = data[tickers[0]].pct_change().dropna()
-    rets_deutsche_bank = data[tickers[1]].pct_change().dropna()
-    rets_commerz_bank = data[tickers[2]].pct_change().dropna()
-
-    # Plotting scatter plots
-    fig, axs = plt.subplots(1, 3, figsize=(15, 5))
-
-    # Scatter plot for Fresenius vs Deutsche Bank
-    axs[0].scatter(rets_fresenius, rets_deutsche_bank, alpha=0.5)
-    axs[0].plot(np.unique(rets_fresenius),
-                np.poly1d(np.polyfit(rets_fresenius, rets_deutsche_bank,
-                                     1))(np.unique(rets_fresenius)),
-                color='red')
-    axs[0].set_title(f'{ticker1} vs {ticker2}')
-
-    # Scatter plot for Fresenius vs Commerz Bank
-    axs[1].scatter(rets_fresenius, rets_commerz_bank, alpha=0.5)
-    axs[1].plot(np.unique(rets_fresenius),
-                np.poly1d(np.polyfit(rets_fresenius, rets_commerz_bank,
-                                     1))(np.unique(rets_fresenius)),
-                color='red')
-    axs[1].set_title(f'{ticker1} vs {ticker3}')
-
-    # Scatter plot for Commerz Bank vs Deutsche Bank
-    axs[2].scatter(rets_commerz_bank, rets_deutsche_bank, alpha=0.5)
-    axs[2].plot(np.unique(rets_commerz_bank),
-                np.poly1d(np.polyfit(rets_commerz_bank, rets_deutsche_bank,
-                                     1))(np.unique(rets_commerz_bank)),
-                color='red')
-    axs[2].set_title(f'{ticker2} vs {ticker3}')
-
-    plt.tight_layout()
-    st.pyplot(fig)
-
-    # Calculate and display correlations
-    correlation_fd = np.corrcoef(rets_fresenius, rets_deutsche_bank)[0, 1]
-    correlation_fc = np.corrcoef(rets_fresenius, rets_commerz_bank)[0, 1]
-    st.write(
-        f'Correlation between {ticker1} and {ticker2}: {correlation_fd}')
-    st.write(
-        f'Correlation between {ticker1} and {ticker3} {correlation_fc}')
-    st.write(
-        f'Correlation between {ticker2} and {ticker3} {correlation_fc}')
