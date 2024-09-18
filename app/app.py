@@ -188,7 +188,7 @@ with tab2:
       st.pyplot(fig11)
     with col12:
       fig12, ax12 = plt.subplots()
-      sns.displot(df['monthly_returns'])
+      sns.displot(dax['monthly_returns'])
       sns.kdeplot(normal_returns, ax=ax12)
       ax12.set_title("Distribution of Monthly Returns")
       ax12.set_xlabel("Monthly Returns")
