@@ -144,7 +144,7 @@ with tab2:
   '''
   st.write(tab2_text)
   # Sidebar for user input in Tab 1
-  selected_stock = st.multiselect("Select Tickers",
+  selected_stock = st.select("Select A Ticker",
                                   tickers)
 
   if selected_stock:
