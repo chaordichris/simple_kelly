@@ -181,7 +181,6 @@ with tab2:
       sns.lineplot(data=dax,
                    x='Date',
                    y='Close',
-                   hue='sim',
                    ax=ax11)
       ax11.set_title("Daily Close Price")
       ax11.set_xlabel("Month")
