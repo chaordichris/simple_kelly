@@ -171,7 +171,6 @@ with tab2:
       fig12, ax12 = plt.subplots()
       sns.histplot(dax['monthly_returns'], ax=ax12, kde=False, stat='density', bins=30)
       sns.kdeplot(normal_returns, ax=ax12, color='red', label='Emprical Distribution')
-      ax12.axvline(x=mu, color='blue', linestyle='--', label='Mean')
       ax12.set_title("Distribution of Monthly Returns")
       ax12.set_xlabel("Monthly Returns")
       ax12.set_ylabel("Density")
