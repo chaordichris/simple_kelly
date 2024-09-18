@@ -165,14 +165,38 @@ with tab2:
                               value=25)
 
   run_simulation = st.button("Run Simulation")
+  # Error handling to ensure at least 3 tickers are selected
 
-  if run_simulation:
+  if selected_stock:
     # Download the selected stock data
     dax = yf.download(selected_stock, start=start_date, end=end_date, interval='1mo')
     dax['monthly_returns'] = (dax['Close'] / dax['Close'].shift(1)
                               ) - 1  # Calculate the monthly returns
     mu = dax['monthly_returns'].mean()
     sigma = dax['monthly_returns'].std()
+    normal_returns = norm.rvs(loc=mu, scale=sigma, size = n)
+    col11, col12 = st.columns(2)
+    with col11:
+      fig11, ax11 = plt.subplots()
+      sns.lineplot(data=dax,
+                   x='Date',
+                   y='Close',
+                   hue='sim',
+                   ax=ax1)
+      ax11.set_title("Daily Close Price")
+      ax11.set_xlabel("Month")
+      ax11.set_ylabel("Price at Close")
+      st.pyplot(fig11)
+    with col12:
+      fig12, ax12 = plt.subplots()
+      sns.displot(df['monthly_returns'])
+      sns.kdeplot(normal_returns, ax=ax1)
+      ax12.set_title("Distribution of Monthly Returns")
+      ax12.set_xlabel("Monthly Returns")
+      ax12.set_ylabel("Density")
+      st.pyplot(fig12)
+  if run_simulation:
+
     r = risk_free_rate / 12.0  # Monthly risk-free rate
 
     # Initialize a list to store the grouped DataFrames for each Kelly fraction
