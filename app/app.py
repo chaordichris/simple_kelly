@@ -182,7 +182,7 @@ with tab2:
                    x='Date',
                    y='Close',
                    hue='sim',
-                   ax=ax1)
+                   ax=ax11)
       ax11.set_title("Daily Close Price")
       ax11.set_xlabel("Month")
       ax11.set_ylabel("Price at Close")
@@ -190,7 +190,7 @@ with tab2:
     with col12:
       fig12, ax12 = plt.subplots()
       sns.displot(df['monthly_returns'])
-      sns.kdeplot(normal_returns, ax=ax1)
+      sns.kdeplot(normal_returns, ax=ax12)
       ax12.set_title("Distribution of Monthly Returns")
       ax12.set_xlabel("Monthly Returns")
       ax12.set_ylabel("Density")
