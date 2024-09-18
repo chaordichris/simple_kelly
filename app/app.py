@@ -326,4 +326,4 @@ with tab3:
 with tab4:
   run_analysis = st.button("Run Analysis")
   # run the portfolio optimization after the button is clicked
-  if run_analysis:
+  # if run_analysis:
