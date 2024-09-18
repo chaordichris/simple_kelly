@@ -174,7 +174,7 @@ with tab2:
                               ) - 1  # Calculate the monthly returns
     mu = dax['monthly_returns'].mean()
     sigma = dax['monthly_returns'].std()
-    normal_returns = norm.rvs(loc=mu, scale=sigma, size = n)
+    normal_returns = norm.rvs(loc=mu, scale=sigma, size = 1000)
     col11, col12 = st.columns(2)
     with col11:
       fig11, ax11 = plt.subplots()
