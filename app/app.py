@@ -146,26 +146,6 @@ with tab2:
   # Sidebar for user input in Tab 1
   selected_stock = st.multiselect("Select Tickers",
                                   tickers)
-  risk_free_rate = st.slider("Risk Free Rate",
-                                    min_value=0.0,
-                                    max_value=0.15,
-                                    value=0.03,
-                                    step=0.01)
-  n_simulations = st.slider("Number of Simulations",
-                                    min_value=100,
-                                    max_value=5000,
-                                    value=1000)
-  n_months = st.slider("Number of Months",
-                               min_value=10,
-                               max_value=120,
-                               value=30)
-  n_steps = st.slider("Number of Kelly Steps",
-                              min_value=5,
-                              max_value=50,
-                              value=25)
-
-  run_simulation = st.button("Run Simulation")
-  # Error handling to ensure at least 3 tickers are selected
 
   if selected_stock:
     # Download the selected stock data
@@ -194,6 +174,28 @@ with tab2:
       ax12.set_xlabel("Monthly Returns")
       ax12.set_ylabel("Density")
       st.pyplot(fig12)
+
+  risk_free_rate = st.slider("Risk Free Rate",
+                                    min_value=0.0,
+                                    max_value=0.15,
+                                    value=0.03,
+                                    step=0.01)
+  n_simulations = st.slider("Number of Simulations",
+                                    min_value=100,
+                                    max_value=5000,
+                                    value=1000)
+  n_months = st.slider("Number of Months",
+                               min_value=10,
+                               max_value=120,
+                               value=30)
+  n_steps = st.slider("Number of Kelly Steps",
+                              min_value=5,
+                              max_value=50,
+                              value=25)
+
+  run_simulation = st.button("Run Simulation")
+  # Error handling to ensure at least 3 tickers are selected
+
   if run_simulation:
 
     r = risk_free_rate / 12.0  # Monthly risk-free rate
