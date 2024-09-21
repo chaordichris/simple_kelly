@@ -46,7 +46,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
     "Kelly Optimal Betting Fraction",
     "Optimal Kelly Fraction Simulation",
     "Visualizing Correlated Stocks",
-    "Portfolio Optimization"
+    # "Portfolio Optimization"
 ])
 
 with tab1:
@@ -278,7 +278,7 @@ with tab2:
 
 with tab3:
   # Sidebar for user input in Tab 2
-  st.header("Correlation Analaysis")
+  st.header("Correlation Analysis")
   
   # Download historical stock data using yfinance
   data = yf.download(tickers, start=start_date, end=end_date)['Adj Close']
@@ -321,9 +321,9 @@ with tab3:
   plt.tight_layout()
   st.pyplot(fig)
 
-  # Calculate and display correlations
 
-with tab4:
-  run_analysis = st.button("Run Analysis")
+
+# with tab4:
+#   run_analysis = st.button("Run Analysis")
   # run the portfolio optimization after the button is clicked
   # if run_analysis:
