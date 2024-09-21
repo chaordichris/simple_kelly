@@ -166,7 +166,7 @@ with tab2:
       ax11.set_title("Daily Close Price")
       ax11.set_xlabel("Month")
       ax11.set_ylabel("Price at Close")
-      ax11.set_xticks(rotation=45)
+      plt.xticks(rotation=45)
       st.pyplot(fig11)
     with col12:
       fig12, ax12 = plt.subplots()
