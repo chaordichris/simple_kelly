@@ -132,7 +132,6 @@ with tab1:
   dfm = df.melt('periods', var_name = 'wealth_fraction', value_name = 'wealth')
   st.subheader("Expected Wealth w/ Different Kelly Fractions")
   fig2, ax2 = plt.subplots()
-  st.table(dfm.head())
   sns.lineplot(data=dfm, x='periods', y='wealth', hue='wealth_fraction', ax=ax2)
   plt.xlabel("Investment Periods")
   plt.ylabel("Expected Wealth")
@@ -152,6 +151,7 @@ with tab2:
   if selected_stock:
     # Download the selected stock data
     dax = yf.download(selected_stock, start=start_date, end=end_date, interval='1mo')
+    st.table(dax.head())
     dax['monthly_returns'] = (dax['Close'] / dax['Close'].shift(1)
                               ) - 1  # Calculate the monthly returns
     mu = dax['monthly_returns'].mean()
