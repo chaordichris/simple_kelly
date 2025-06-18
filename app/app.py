@@ -162,8 +162,8 @@ with tab2:
     with col11:
       fig11, ax11 = plt.subplots()
       sns.lineplot(data=dax,
-                   x='Date',
-                   y='Close',
+                   x=dax['Date'],
+                   y=dax['Close'],
                    ax=ax11)
       ax11.set_title("Daily Close Price")
       ax11.set_xlabel("Month")
