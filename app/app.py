@@ -86,7 +86,6 @@ with tab1:
   xgr = param3 * np.log(1 + param1 * u) + (1-param3) * np.log(1 - param2 * u) 
   # Create a DataFrame
   df = pd.DataFrame({'perc_capital': u, 'expected_growth': xgr})
-  st.table(df)
   # Plot using Seaborn
   st.subheader("Expected Growth Rate vs Capital Fraction")
   fig, ax = plt.subplots()
@@ -133,6 +132,7 @@ with tab1:
   dfm = df.melt('periods', var_name = 'wealth_fraction', value_name = 'wealth')
   st.subheader("Expected Wealth w/ Different Kelly Fractions")
   fig2, ax2 = plt.subplots()
+  st.table(dfm.head())
   sns.lineplot(data=dfm, x='periods', y='wealth', hue='wealth_fraction', ax=ax2)
   plt.xlabel("Investment Periods")
   plt.ylabel("Expected Wealth")
