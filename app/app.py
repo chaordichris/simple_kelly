@@ -281,7 +281,7 @@ with tab3:
   st.header("Correlation Analysis")
   
   # Download historical stock data using yfinance
-  data = yf.download(tickers, start=start_date, end=end_date)['Adj Close']
+  data = yf.download(tickers, start=start_date, end=end_date, auto_adjust=True)['Close']
 
   # Calculate daily returns for each stock
   rets_fresenius = data[tickers[0]].pct_change().dropna()
