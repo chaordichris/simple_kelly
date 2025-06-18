@@ -150,8 +150,10 @@ with tab2:
 
   if selected_stock:
     # Download the selected stock data
-    dax = yf.download(selected_stock, start=start_date, end=end_date, interval='1mo')
+    dax = yf.download(selected_stock, start=start_date, end=end_date, interval='1mo', auto_adjust=False)
     dax.reset_index(inplace=True)
+    dax['Close'] = dax['Close'].squeeze()  # Converts DataFrame with shape (n,1) to Series
+
     st.table(dax.head())
     dax['monthly_returns'] = (dax['Close'] / dax['Close'].shift(1)
                               ) - 1  # Calculate the monthly returns
@@ -162,8 +164,8 @@ with tab2:
     with col11:
       fig11, ax11 = plt.subplots()
       sns.lineplot(data=dax,
-                   x=dax['Date'],
-                   y=dax['Close'],
+                   x='Date',
+                   y='Close',
                    ax=ax11)
       ax11.set_title("Daily Close Price")
       ax11.set_xlabel("Month")
