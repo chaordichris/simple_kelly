@@ -86,6 +86,7 @@ with tab1:
   xgr = param3 * np.log(1 + param1 * u) + (1-param3) * np.log(1 - param2 * u) 
   # Create a DataFrame
   df = pd.DataFrame({'perc_capital': u, 'expected_growth': xgr})
+  st.table(df)
   # Plot using Seaborn
   st.subheader("Expected Growth Rate vs Capital Fraction")
   fig, ax = plt.subplots()
