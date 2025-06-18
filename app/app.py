@@ -151,7 +151,7 @@ with tab2:
   if selected_stock:
     # Download the selected stock data
     dax = yf.download(selected_stock, start=start_date, end=end_date, interval='1mo')
-    st.table(dax.head())
+    dax.reset_index(inplace=True)
     dax['monthly_returns'] = (dax['Close'] / dax['Close'].shift(1)
                               ) - 1  # Calculate the monthly returns
     mu = dax['monthly_returns'].mean()
