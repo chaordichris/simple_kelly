@@ -4,10 +4,17 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from app.data import download_monthly_prices, download_close_prices
-from app.kelly import expected_log_growth, simulate_binary_wealth_paths
-from app.models import KellyInputs, SimulationConfig
-from app.sim import simulate_kelly_paths
+try:
+    from app.data import download_monthly_prices, download_close_prices
+    from app.kelly import expected_log_growth, simulate_binary_wealth_paths
+    from app.models import KellyInputs, SimulationConfig
+    from app.sim import simulate_kelly_paths
+except ModuleNotFoundError:
+    # Support `streamlit run app/app.py`, where `app.py` shadows the package name.
+    from data import download_monthly_prices, download_close_prices
+    from kelly import expected_log_growth, simulate_binary_wealth_paths
+    from models import KellyInputs, SimulationConfig
+    from sim import simulate_kelly_paths
 
 
 @st.cache_data(show_spinner=False)

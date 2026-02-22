@@ -3,7 +3,10 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from app.models import SimulationConfig
+try:
+    from app.models import SimulationConfig
+except ModuleNotFoundError:
+    from models import SimulationConfig
 
 
 def simulate_kelly_paths(config: SimulationConfig) -> tuple[pd.DataFrame, pd.DataFrame]:

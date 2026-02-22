@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import numpy as np
 
-from app.models import KellyInputs
+try:
+    from app.models import KellyInputs
+except ModuleNotFoundError:
+    from models import KellyInputs
 
 
 def kelly_fraction_closed_form(prob_success: float, gain_multiplier: float, loss_multiplier: float) -> float:
