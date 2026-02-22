@@ -6,3 +6,5 @@ yfinance
 numpy
 matplotlib
 plotly
+mypy
+ruff

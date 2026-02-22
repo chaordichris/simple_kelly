@@ -1,64 +1,77 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import yfinance as yf
-from scipy.stats import norm, multivariate_normal
-from numpy.linalg import pinv
 import seaborn as sns
 import matplotlib.pyplot as plt
-import plotly.graph_objs as go
-from plotly.subplots import make_subplots
-from scipy.optimize import minimize
-from scipy.stats import binom
 
-# Set the title for the Streamlit app
+from app.data import download_monthly_prices, download_close_prices
+from app.kelly import expected_log_growth, simulate_binary_wealth_paths
+from app.models import KellyInputs, SimulationConfig
+from app.sim import simulate_kelly_paths
+
+
+@st.cache_data(show_spinner=False)
+def cached_download_monthly_prices(ticker, start_date, end_date):
+    return download_monthly_prices(ticker, start_date, end_date)
+
+
+@st.cache_data(show_spinner=False)
+def cached_download_close_prices(tickers, start_date, end_date):
+    return download_close_prices(tickers, start_date, end_date)
+
+
+@st.cache_data(show_spinner=False)
+def cached_simulate_kelly_paths(config: SimulationConfig):
+    return simulate_kelly_paths(config)
+
+
 st.title("Simple Kelly Criterion")
 
-st.sidebar.header("Select Up to 3 Stocks for your portfolio")
+st.sidebar.header("Select exactly 3 stocks for your portfolio")
 
 sp500_top50 = [
-    'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'GOOG', 'BRK-B', 'NVDA', 'TSLA', 'META',
-    'UNH', 'JNJ', 'V', 'XOM', 'WMT', 'JPM', 'MA', 'PG', 'HD', 'BAC', 'PFE',
-    'ABBV', 'KO', 'DIS', 'PEP', 'NFLX', 'CSCO', 'NKE', 'LLY', 'MCD', 'VZ',
-    'MRK', 'TMO', 'CVX', 'ABT', 'CMCSA', 'DHR', 'AVGO', 'COST', 'ACN', 'NEE',
-    'WFC', 'LIN', 'TXN', 'ADBE', 'MDT', 'HON', 'UNP', 'ORCL', 'PM'
+    "AAPL", "MSFT", "AMZN", "GOOGL", "GOOG", "BRK-B", "NVDA", "TSLA", "META",
+    "UNH", "JNJ", "V", "XOM", "WMT", "JPM", "MA", "PG", "HD", "BAC", "PFE",
+    "ABBV", "KO", "DIS", "PEP", "NFLX", "CSCO", "NKE", "LLY", "MCD", "VZ",
+    "MRK", "TMO", "CVX", "ABT", "CMCSA", "DHR", "AVGO", "COST", "ACN", "NEE",
+    "WFC", "LIN", "TXN", "ADBE", "MDT", "HON", "UNP", "ORCL", "PM",
 ]
-# Ticker selection from sp500_top50
-tickers = st.sidebar.multiselect("Select Tickers",
-                                  sp500_top50,
-                                  default=["AAPL", "MSFT", "GOOGL"])
-# Error handling to ensure at least 3 tickers are selected
-if len(tickers) < 3:
-    st.sidebar.error("Please select 3 tickers.")
-    # Set default tickers if not enough are selected
+
+tickers = st.sidebar.multiselect(
+    "Select Tickers",
+    sp500_top50,
+    default=["AAPL", "MSFT", "GOOGL"],
+    max_selections=3,
+)
+
+if len(tickers) != 3:
+    st.sidebar.error("Please select exactly 3 tickers.")
     tickers = ["AAPL", "MSFT", "GOOGL"]
 
-ticker1 = tickers[0]
-ticker2 = tickers[1]
-ticker3 = tickers[2]
+ticker1, ticker2, ticker3 = tickers
 
-start_date = st.sidebar.date_input("Start Date",
-                                    value=pd.to_datetime('2013-01-01'))
-end_date = st.sidebar.date_input("End Date",
-                                  value=pd.to_datetime('2023-04-30'))
-# Create tabs
-tab1, tab2, tab3 = st.tabs([
-    "Kelly Optimal Betting Fraction",
-    "Optimal Kelly Fraction Simulation",
-    "Visualizing Correlated Stocks",
-    # "Portfolio Optimization"
-])
+start_date = st.sidebar.date_input("Start Date", value=pd.to_datetime("2013-01-01"))
+end_date = st.sidebar.date_input("End Date", value=pd.Timestamp.today().date())
+
+if start_date >= end_date:
+    st.sidebar.error("Start Date must be before End Date.")
+
+tab1, tab2, tab3 = st.tabs(
+    [
+        "Kelly Optimal Betting Fraction",
+        "Optimal Kelly Fraction Simulation",
+        "Visualizing Correlated Stocks",
+    ]
+)
 
 with tab1:
-# Title for the app
-  # Brief explanation of the Kelly formula
-  kelly_formula = r'''
+    kelly_formula = r'''
   ## Kelly Criterion Derivation
   ### Expected Geometric Growth Rate
-  $$ 
+  $$
   r = (1+fb)^{p} * (1-fa)^{1-p}
   $$
-  
+
   Where $f$ is the fraction of the portfolio to be invested, $p$ is the probability of success, $b$ is the growth multiplier, and $a$ is the loss multiplier.
 
   Now take ARGMAX of the log expected growth rate.
@@ -75,255 +88,169 @@ with tab1:
   f^{*} = \frac{p}{a} - \frac{1-p}{b}
   $$
   '''
-  st.write(kelly_formula)
-  # Let the user adjust the parameters
-  param1 = st.slider("Parameter 1 (Growth multiplier)", min_value=0.1, max_value=3.0, value=1.5, step=0.05)
-  param2 = st.slider("Parameter 2 (Loss multiplier)", min_value=0.05, max_value=1.0, value=0.5, step=0.05)
-  param3 = st.slider("Parameter 3 (Probability of Success)", min_value=0.01, max_value=1.0, value=0.5, step=0.01)
-  
-  # Generate the data based on user input
-  u = np.linspace(0, 1, num=100)
-  xgr = param3 * np.log(1 + param1 * u) + (1-param3) * np.log(1 - param2 * u) 
-  # Create a DataFrame
-  df = pd.DataFrame({'perc_capital': u, 'expected_growth': xgr})
-  # Plot using Seaborn
-  st.subheader("Expected Growth Rate vs Capital Fraction")
-  fig, ax = plt.subplots()
-  sns.lineplot(data=df, x='perc_capital', y='expected_growth', ax=ax)
-  plt.xlabel("Percentage of Capital")
-  plt.ylabel("Expected Growth Rate")
-  st.pyplot(fig)
+    st.write(kelly_formula)
 
-  # lets do an additional exercise by solving for the kelly optimal percent of capital to invest based on the scenario we present
-  # and write a function in python to calculate and plot the full kelly, half kelly, and fully invested strategies, 
-  # similar to the above, but done in a nice python function where inputs are provided
-  param4 = st.slider("Parameter 4 (Number of Periods)", min_value=10, max_value=1000, value=50, step=10)
-  param5 = st.slider("Parameter 5 (Percent Kelly to Compare)", min_value=0.05, max_value=1.0, value=0.5, step=0.05)
-  def log_util(u, p1, r1, r2):
-    # inverse log utility so we can use the scipy minimize function
-    return -1.0 *(p1*np.log(1+r1*u) + (1-p1)*np.log(1-r2*u))
+    param1 = st.slider("Parameter 1 (Growth multiplier)", min_value=0.1, max_value=3.0, value=1.5, step=0.05)
+    param2 = st.slider("Parameter 2 (Loss multiplier)", min_value=0.05, max_value=1.0, value=0.5, step=0.05)
+    param3 = st.slider("Parameter 3 (Probability of Success)", min_value=0.01, max_value=1.0, value=0.5, step=0.01)
 
-  def minimize_util(p1, r1, r2):
-    kr = minimize(log_util, 0, args = (p1, r1, r2), method = 'BFGS')
-    return kr.x[0]
+    u = np.linspace(0, 1, num=100)
+    xgr = expected_log_growth(u, param3, param1, param2)
+    df = pd.DataFrame({"perc_capital": u, "expected_growth": xgr})
 
-  def wealth(p1, r1, r2, n_trades, wealth_1, f):
-    # n is the number of trades, wealth_1 is starting wealth, f is the kelly fraction to be considered
-    k = minimize_util(p1, r1, r2)
-    wealth, wealth_k, wealth_fk = [wealth_1] * n_trades, [wealth_1] * n_trades, [wealth_1] * n_trades
-    periods = np.linspace(0, n_trades-1, num=n_trades)
-    outcomes = binom.rvs(1, p1, size = n_trades)
-    for i in range(1, len(outcomes)):
-      if outcomes[i] == 0:
-        wealth[i] = wealth[i-1] * (1-r2)
-        wealth_k[i] = wealth_k[i-1] * k * (1-r2) + wealth_k[i-1] * (1-k)
-        wealth_fk[i] = wealth_fk[i-1] * f*k * (1-r2) + wealth_fk[i-1] * (1-f*k)
-      else:
-        wealth[i] = wealth[i-1] * (1+r1)
-        wealth_k[i] = wealth_k[i-1] * k * (1+r1) + wealth_k[i-1] * (1-k)
-        wealth_fk[i] = wealth_fk[i-1] * f*k * (1+r1) + wealth_fk[i-1] * (1-f*k)
-    df = pd.DataFrame(data = {'Invest Everything':wealth,
-                            'Invest Kelly Optimal Amount':wealth_k,
-                            f'Invest {param5 * 100}% of Kelly Optimal Amount':wealth_fk,
-                            'periods':periods})
-    return df
+    st.subheader("Expected Growth Rate vs Capital Fraction")
+    fig, ax = plt.subplots()
+    sns.lineplot(data=df, x="perc_capital", y="expected_growth", ax=ax)
+    plt.xlabel("Percentage of Capital")
+    plt.ylabel("Expected Growth Rate")
+    st.pyplot(fig)
 
-  df = wealth(param3, param1, param2, param4, 1, param5) # make this selectable in the streamlit application
-  dfm = df.melt('periods', var_name = 'wealth_fraction', value_name = 'wealth')
-  st.subheader("Expected Wealth w/ Different Kelly Fractions")
-  fig2, ax2 = plt.subplots()
-  sns.lineplot(data=dfm, x='periods', y='wealth', hue='wealth_fraction', ax=ax2)
-  plt.xlabel("Investment Periods")
-  plt.ylabel("Expected Wealth")
-  st.pyplot(fig2)
+    param4 = st.slider("Parameter 4 (Number of Periods)", min_value=10, max_value=1000, value=50, step=10)
+    param5 = st.slider("Parameter 5 (Percent Kelly to Compare)", min_value=0.05, max_value=1.0, value=0.5, step=0.05)
+
+    kelly_inputs = KellyInputs(
+        prob_success=param3,
+        gain_multiplier=param1,
+        loss_multiplier=param2,
+        n_periods=param4,
+        fractional_kelly=param5,
+    )
+    wealth_all, wealth_k, wealth_fk, _ = simulate_binary_wealth_paths(kelly_inputs)
+
+    wealth_df = pd.DataFrame(
+        {
+            "Invest Everything": wealth_all,
+            "Invest Kelly Optimal Amount": wealth_k,
+            f"Invest {param5 * 100:.0f}% of Kelly Optimal Amount": wealth_fk,
+            "periods": np.arange(param4),
+        }
+    )
+
+    dfm = wealth_df.melt("periods", var_name="wealth_fraction", value_name="wealth")
+    st.subheader("Expected Wealth w/ Different Kelly Fractions")
+    fig2, ax2 = plt.subplots()
+    sns.lineplot(data=dfm, x="periods", y="wealth", hue="wealth_fraction", ax=ax2)
+    plt.xlabel("Investment Periods")
+    plt.ylabel("Expected Wealth")
+    st.pyplot(fig2)
 
 with tab2:
-  tab2_text = '''
+    st.write(
+        """
   ## Kelly Fraction Simulation
   Simulate the log wealth of different kelly fractions for a given stock and risk free rate.
   Select a stock, a risk free rate, periods (months), simulations, and kelly steps to view simulation results.
-  '''
-  st.write(tab2_text)
-  # Sidebar for user input in Tab 1
-  selected_stock = st.selectbox("Select A Ticker",
-                                  tickers)
+  """
+    )
 
-  if selected_stock:
-    # Download the selected stock data
-    dax = yf.download(selected_stock, start=start_date, end=end_date, interval='1mo', auto_adjust=False)
-    dax.reset_index(inplace=True)
-    st.table(dax.head())
-    dax['monthly_returns'] = (dax['Close'] / dax['Close'].shift(1)
-                              ) - 1  # Calculate the monthly returns
-    mu = dax['monthly_returns'].mean()
-    sigma = dax['monthly_returns'].std()
-    normal_returns = norm.rvs(loc=mu, scale=sigma, size = 1000)
-    col11, col12 = st.columns(2)
-    with col11:
-      fig11, ax11 = plt.subplots()
-      sns.lineplot(x=dax['Date'], y=dax['Close'].squeeze(), ax=ax11) # Use .squeeze() here
-      ax11.set_title("Monthly Close Price")
-      ax11.set_xlabel("Month")
-      ax11.set_ylabel("Price at Close")
-      plt.xticks(rotation=45)
-      st.pyplot(fig11)
-    with col12:
-      fig12, ax12 = plt.subplots()
-      sns.histplot(dax['monthly_returns'], ax=ax12, kde=False, stat='density', bins=30)
-      sns.kdeplot(normal_returns, ax=ax12, color='red', label='Emprical Distribution')
-      ax12.set_title("Distribution of Monthly Returns")
-      ax12.set_xlabel("Monthly Returns")
-      ax12.set_ylabel("Density")
-      st.pyplot(fig12)
+    selected_stock = st.selectbox("Select A Ticker", tickers)
 
-  risk_free_rate = st.slider("Risk Free Rate",
-                                    min_value=0.0,
-                                    max_value=0.15,
-                                    value=0.03,
-                                    step=0.01)
-  n_simulations = st.slider("Number of Simulations",
-                                    min_value=100,
-                                    max_value=5000,
-                                    value=1000)
-  n_months = st.slider("Number of Months",
-                               min_value=10,
-                               max_value=120,
-                               value=30)
-  n_steps = st.slider("Number of Kelly Steps",
-                              min_value=5,
-                              max_value=50,
-                              value=25)
+    mu = None
+    sigma = None
+    stock_df = None
 
-  run_simulation = st.button("Run Simulation")
-  # Error handling to ensure at least 3 tickers are selected
+    if selected_stock and start_date < end_date:
+        stock_df = cached_download_monthly_prices(selected_stock, start_date, end_date)
+        if stock_df.empty:
+            st.warning("No monthly data returned for the selected ticker/date range.")
+        else:
+            st.table(stock_df.head())
+            mu = stock_df["monthly_returns"].mean()
+            sigma = stock_df["monthly_returns"].std()
 
-  if run_simulation:
+            if pd.isna(mu) or pd.isna(sigma) or sigma <= 0:
+                st.warning("Not enough valid return observations to estimate simulation parameters.")
+            else:
+                normal_returns = np.random.normal(loc=mu, scale=sigma, size=1000)
+                col11, col12 = st.columns(2)
+                with col11:
+                    fig11, ax11 = plt.subplots()
+                    sns.lineplot(x=stock_df["Date"], y=stock_df["Close"], ax=ax11)
+                    ax11.set_title("Monthly Close Price")
+                    ax11.set_xlabel("Month")
+                    ax11.set_ylabel("Price at Close")
+                    plt.xticks(rotation=45)
+                    st.pyplot(fig11)
+                with col12:
+                    fig12, ax12 = plt.subplots()
+                    sns.histplot(stock_df["monthly_returns"], ax=ax12, kde=False, stat="density", bins=30)
+                    sns.kdeplot(normal_returns, ax=ax12, color="red", label="Normal Approximation")
+                    ax12.set_title("Distribution of Monthly Returns")
+                    ax12.set_xlabel("Monthly Returns")
+                    ax12.set_ylabel("Density")
+                    st.pyplot(fig12)
 
-    r = risk_free_rate / 12.0  # Monthly risk-free rate
+    risk_free_rate = st.slider("Risk Free Rate", min_value=0.0, max_value=0.15, value=0.03, step=0.01)
+    n_simulations = st.slider("Number of Simulations", min_value=100, max_value=5000, value=1000)
+    n_months = st.slider("Number of Months", min_value=10, max_value=120, value=30)
+    n_steps = st.slider("Number of Kelly Steps", min_value=5, max_value=50, value=25)
 
-    # Initialize a list to store the grouped DataFrames for each Kelly fraction
-    dff_list = []
+    run_simulation = st.button("Run Simulation")
 
-    # Iterate through all Kelly scenarios to find the optimal Kelly fraction
-    for u in range(n_steps):
-      kelly_fraction = u / n_steps  # Calculate the Kelly fraction for this step
+    if run_simulation:
+        if mu is None or sigma is None or pd.isna(mu) or pd.isna(sigma) or sigma <= 0:
+            st.error("Simulation requires valid return moments (mu, sigma). Select a ticker/range with enough data.")
+        else:
+            sim_config = SimulationConfig(
+                mu=float(mu),
+                sigma=float(sigma),
+                risk_free_rate=risk_free_rate,
+                n_simulations=n_simulations,
+                n_months=n_months,
+                n_steps=n_steps,
+            )
+            per_sim_df, averaged_df = cached_simulate_kelly_paths(sim_config)
 
-      # Initialize a list to store DataFrames for each simulation
-      df_simulations = []
+            col1, col2 = st.columns(2)
 
-      for i in range(n_simulations):
-        # Simulate monthly returns
-        rvs = norm.rvs(loc=mu, scale=sigma, size=n_months)
+            with col1:
+                fig1, ax1 = plt.subplots()
+                sns.lineplot(data=per_sim_df, x="month", y="log_wealth", hue="sim", ax=ax1)
+                ax1.set_title("Kelly Fraction Simulation Results (Selected Kelly)")
+                ax1.set_xlabel("Month")
+                ax1.set_ylabel("Log Wealth")
+                st.pyplot(fig1)
 
-        # Initialize wealth list
-        w = [1.0] * n_months
-
-        for j in range(1, n_months):
-          # Clip returns to avoid extreme values
-          if rvs[j] < -0.99:
-            rvs[j] = -0.99
-          elif rvs[j] > 0.99:
-            rvs[j] = 0.99
-
-          # Calculate portfolio return with Kelly fraction and risk-free rate
-          port_ret = (kelly_fraction * (rvs[j - 1] - r)) + (1 + r)
-          w[j] = w[j - 1] * port_ret
-
-        # Create a DataFrame for this simulation
-        dfa = pd.DataFrame({
-            'returns': rvs,
-            'wealth': w,
-            'month': np.arange(1, n_months + 1),
-            'sim': i,
-            'kelly': kelly_fraction,
-            'log_wealth': np.log(w)
-        })
-
-        # Append the simulation DataFrame to the list
-        df_simulations.append(dfa)
-
-      # Concatenate all simulation DataFrames for this Kelly fraction
-      df_concat = pd.concat(df_simulations, ignore_index=True)
-
-      # Group by 'kelly' and 'month' and calculate the mean
-      df_grouped = df_concat.groupby(['kelly', 'month']).mean().reset_index()
-
-      # Append the grouped DataFrame to the dff_list
-      dff_list.append(df_grouped)
-
-    # Concatenate all grouped DataFrames from different Kelly fractions
-    dff = pd.concat(dff_list, ignore_index=True)
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-      fig1, ax1 = plt.subplots()
-      sns.lineplot(data=df_concat,
-                   x='month',
-                   y='log_wealth',
-                   hue='sim',
-                   ax=ax1)
-      ax1.set_title("Kelly Fraction Simulation Results (Simulations)")
-      ax1.set_xlabel("Month")
-      ax1.set_ylabel("Log Wealth")
-      st.pyplot(fig1)
-
-    with col2:
-      fig2, ax2 = plt.subplots()
-      sns.lineplot(data=dff, x='month', y='log_wealth', hue='kelly', ax=ax2)
-      ax2.set_title("Kelly Fraction Simulation Results (Averaged)")
-      ax2.set_xlabel("Month")
-      ax2.set_ylabel("Log Wealth")
-      st.pyplot(fig2)
+            with col2:
+                fig3, ax3 = plt.subplots()
+                sns.lineplot(data=averaged_df, x="month", y="log_wealth", hue="kelly", ax=ax3)
+                ax3.set_title("Kelly Fraction Simulation Results (Averaged)")
+                ax3.set_xlabel("Month")
+                ax3.set_ylabel("Log Wealth")
+                st.pyplot(fig3)
 
 with tab3:
-  # Sidebar for user input in Tab 2
-  st.header("Correlation Analysis")
-  
-  # Download historical stock data using yfinance
-  data = yf.download(tickers, start=start_date, end=end_date, auto_adjust=True)['Close']
+    st.header("Correlation Analysis")
 
-  # Calculate daily returns for each stock
-  rets_fresenius = data[tickers[0]].pct_change().dropna()
-  rets_deutsche_bank = data[tickers[1]].pct_change().dropna()
-  rets_commerz_bank = data[tickers[2]].pct_change().dropna()
-  # calculate the correlations
-  correlation_fd = np.corrcoef(rets_fresenius, rets_deutsche_bank)[0, 1]
-  correlation_fc = np.corrcoef(rets_fresenius, rets_commerz_bank)[0, 1]
-  correlation_dc = np.corrcoef(rets_deutsche_bank, rets_commerz_bank)[0, 1]
-  # Plotting scatter plots
-  fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+    if start_date >= end_date:
+        st.warning("Please choose a valid date range.")
+    else:
+        close_data = cached_download_close_prices(tickers, start_date, end_date)
 
-  # Scatter plot for Fresenius vs Deutsche Bank
-  axs[0].scatter(rets_fresenius, rets_deutsche_bank, alpha=0.5)
-  axs[0].plot(np.unique(rets_fresenius),
-              np.poly1d(np.polyfit(rets_fresenius, rets_deutsche_bank,
-                                    1))(np.unique(rets_fresenius)),
-              color='red')
-  axs[0].set_title(f'{ticker1} vs {ticker2} (Correlation: {correlation_fd:.2f})')
+        if close_data.empty or any(t not in close_data.columns for t in tickers):
+            st.warning("Unable to load close prices for all selected tickers.")
+        else:
+            ret1 = close_data[tickers[0]].pct_change().dropna()
+            ret2 = close_data[tickers[1]].pct_change().dropna()
+            ret3 = close_data[tickers[2]].pct_change().dropna()
 
-  # Scatter plot for Fresenius vs Commerz Bank
-  axs[1].scatter(rets_fresenius, rets_commerz_bank, alpha=0.5)
-  axs[1].plot(np.unique(rets_fresenius),
-              np.poly1d(np.polyfit(rets_fresenius, rets_commerz_bank,
-                                    1))(np.unique(rets_fresenius)),
-              color='red')
-  axs[1].set_title(f'{ticker1} vs {ticker3} (Correlation: {correlation_fc:.2f})')
+            correlation_12 = np.corrcoef(ret1, ret2)[0, 1]
+            correlation_13 = np.corrcoef(ret1, ret3)[0, 1]
+            correlation_23 = np.corrcoef(ret2, ret3)[0, 1]
 
-  # Scatter plot for Commerz Bank vs Deutsche Bank
-  axs[2].scatter(rets_commerz_bank, rets_deutsche_bank, alpha=0.5)
-  axs[2].plot(np.unique(rets_commerz_bank),
-              np.poly1d(np.polyfit(rets_commerz_bank, rets_deutsche_bank,
-                                    1))(np.unique(rets_commerz_bank)),
-              color='red')
-  axs[2].set_title(f'{ticker2} vs {ticker3} (Correlation: {correlation_dc:.2f})')
+            fig_corr, axs = plt.subplots(1, 3, figsize=(15, 5))
 
-  plt.tight_layout()
-  st.pyplot(fig)
+            axs[0].scatter(ret1, ret2, alpha=0.5)
+            axs[0].plot(np.unique(ret1), np.poly1d(np.polyfit(ret1, ret2, 1))(np.unique(ret1)), color="red")
+            axs[0].set_title(f"{ticker1} vs {ticker2} (Correlation: {correlation_12:.2f})")
 
+            axs[1].scatter(ret1, ret3, alpha=0.5)
+            axs[1].plot(np.unique(ret1), np.poly1d(np.polyfit(ret1, ret3, 1))(np.unique(ret1)), color="red")
+            axs[1].set_title(f"{ticker1} vs {ticker3} (Correlation: {correlation_13:.2f})")
 
+            axs[2].scatter(ret3, ret2, alpha=0.5)
+            axs[2].plot(np.unique(ret3), np.poly1d(np.polyfit(ret3, ret2, 1))(np.unique(ret3)), color="red")
+            axs[2].set_title(f"{ticker2} vs {ticker3} (Correlation: {correlation_23:.2f})")
 
-# with tab4:
-#   run_analysis = st.button("Run Analysis")
-  # run the portfolio optimization after the button is clicked
-  # if run_analysis:
+            plt.tight_layout()
+            st.pyplot(fig_corr)
